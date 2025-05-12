@@ -139,6 +139,9 @@ var _ = Describe("Watcher controller", func() {
 				corev1.ConditionUnknown,
 			)
 
+			Watcher := GetWatcher(watcherTest.Instance)
+			Expect(Watcher.IsReady()).Should(BeFalse())
+
 		})
 
 		It("creates service account, role and rolebindig", func() {
@@ -382,6 +385,9 @@ var _ = Describe("Watcher controller", func() {
 				corev1.ConditionTrue,
 			)
 
+			Watcher := GetWatcher(watcherTest.Instance)
+			Expect(Watcher.IsReady()).Should(BeTrue())
+
 			// assert that the KeystoneService for watcher is created
 			ksrvList := &keystonev1beta1.KeystoneServiceList{}
 			listOpts := &client.ListOptions{
@@ -393,7 +399,6 @@ var _ = Describe("Watcher controller", func() {
 			Expect(ksrvList.Items[0].Status.Conditions).ToNot(BeNil())
 
 			// status.hash['dbsync'] should be populated when dbsync is successful
-			Watcher := GetWatcher(watcherTest.Instance)
 			Expect(Watcher.Status.Hash[watcherv1beta1.DbSyncHash]).ShouldNot(BeNil())
 
 			// assert that the top level secret is created
