@@ -82,11 +82,6 @@ func GetTLSeWatcherSpec() map[string]interface{} {
 	return map[string]interface{}{
 		"secret":           SecretName,
 		"databaseInstance": "openstack",
-		"apiOverride": map[string]interface{}{
-			"tls": map[string]string{
-				"secretName": "cert-watcher-public-route",
-			},
-		},
 		"apiServiceTemplate": map[string]interface{}{
 			"tls": map[string]interface{}{
 				"caBundleSecretName": "combined-ca-bundle",
@@ -107,11 +102,6 @@ func GetTLSIngressWatcherSpec() map[string]interface{} {
 	return map[string]interface{}{
 		"secret":           SecretName,
 		"databaseInstance": "openstack",
-		"apiOverride": map[string]interface{}{
-			"tls": map[string]string{
-				"secretName": "cert-watcher-public-route",
-			},
-		},
 		"apiServiceTemplate": map[string]interface{}{
 			"tls": map[string]interface{}{
 				"caBundleSecretName": "combined-ca-bundle",
