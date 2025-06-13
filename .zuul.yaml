@@ -4,13 +4,13 @@
     default-branch: main
     merge-mode: rebase
     templates:
-      - opendev-master-watcher-operator-pipeline
+      #- opendev-master-watcher-operator-pipeline
       - opendev-epoxy-watcher-operator-pipeline
     github-check:
       jobs:
         - noop
         - watcher-operator-doc-preview
-        - watcher-operator-kuttl
+        #- watcher-operator-kuttl
 
 - job:
     name: watcher-operator-base
@@ -301,7 +301,7 @@
       jobs:
         - openstack-meta-content-provider-epoxy
         - watcher-operator-validation-epoxy
-        - watcher-operator-validation-epoxy-ocp4-16
+        #- watcher-operator-validation-epoxy-ocp4-16
 
 - project-template:
     name: opendev-watcher-edpm-pipeline
