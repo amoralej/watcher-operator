@@ -64,14 +64,7 @@ spec:
   decisionengineContainerImageURL: WATCHER_DECISION_ENGINE_CI_IMAGE
   dbPurge: {}
   databaseInstance: "openstack"
-  apiOverride:
-    tls:
-      secretName: cert-watcher-public-route
   apiServiceTemplate:
-    override:
-      service:
-        public:
-          endpointURL: https://watcher-public-openstack.apps-crc.testing
     tls:
       caBundleSecretName: "combined-ca-bundle"
       api:
