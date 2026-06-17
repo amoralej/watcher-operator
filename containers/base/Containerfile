@@ -1,0 +1,90 @@
+# Copyright 2020 Red Hat, Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+FROM registry.access.redhat.com/ubi10/ubi:latest
+
+LABEL maintainer="OpenStack Kubernetes Operator team"
+
+ENV LANG="en_US.UTF-8"
+ENV TZ="UTC"
+ENV container="oci"
+
+USER root
+
+# System packages (runtime only — no compiler toolchain)
+RUN dnf -y install \
+      ca-certificates \
+      curl \
+      glibc-langpack-en \
+      procps-ng \
+      python3 \
+      sudo \
+      util-linux-user \
+      which \
+    && dnf clean all && rm -rf /var/cache/dnf
+
+# Install dumb-init from EPEL (not available in UBI repos)
+RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
+    dnf -y install dumb-init python3-pip && \
+    dnf -y remove epel-release && \
+    dnf clean all && rm -rf /var/cache/dnf
+
+# Install crudini via pip (no RPM available on UBI)
+RUN pip3 install --no-cache-dir crudini
+RUN pip3 install --no-cache-dir pbr
+
+# DNF configuration
+RUN crudini --set /etc/dnf/dnf.conf main clean_requirements_on_remove True && \
+    crudini --set /etc/dnf/dnf.conf main exactarch 1 && \
+    crudini --set /etc/dnf/dnf.conf main gpgcheck 1 && \
+    crudini --set /etc/dnf/dnf.conf main install_weak_deps False && \
+    crudini --set /etc/dnf/dnf.conf main tsflags nodocs
+
+# TLS cert symlink
+RUN if [ ! -f "/etc/pki/tls/cert.pem" ]; then \
+      ln -s /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/cert.pem; \
+    fi
+
+# Install kolla helper scripts
+COPY scripts/uid_gid_manage /usr/local/bin/uid_gid_manage
+COPY scripts/kolla_set_configs /usr/local/bin/kolla_set_configs
+COPY scripts/kolla_start /usr/local/bin/kolla_start
+COPY scripts/kolla_httpd_setup /usr/local/bin/kolla_httpd_setup
+COPY scripts/kolla_copy_cacerts /usr/local/bin/kolla_copy_cacerts
+COPY scripts/sudoers /etc/sudoers
+RUN chmod 755 /usr/local/bin/uid_gid_manage \
+              /usr/local/bin/kolla_set_configs \
+              /usr/local/bin/kolla_start \
+              /usr/local/bin/kolla_httpd_setup \
+              /usr/local/bin/kolla_copy_cacerts && \
+    chmod 440 /etc/sudoers
+
+# Create base users/groups (kolla + system groups needed by multiple services)
+RUN uid_gid_manage kolla hugetlbfs libvirt qemu
+RUN touch /usr/local/bin/kolla_extend_start && \
+    chmod 755 /usr/local/bin/kolla_extend_start
+
+# Fix nsswitch.conf
+RUN sed -ri '/^(passwd:|group:)/ s/systemd//g' /etc/nsswitch.conf
+
+# Create /openstack directory (convention from tcib)
+RUN mkdir -p /openstack
+
+# Final system update
+RUN dnf update -y && dnf clean all && rm -rf /var/cache/dnf
+
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["dumb-init", "--single-child", "--"]
+CMD ["kolla_start"]
